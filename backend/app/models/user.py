@@ -1,11 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from app.db.base import Base
 from sqlalchemy.sql import func
-
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from app.db.base import Base
 
 
 class User(Base):
@@ -23,71 +19,27 @@ class User(Base):
     preferred_categories = relationship("UserPreferredCategory", back_populates="user", cascade="all, delete-orphan")
     preferred_keywords   = relationship("UserPreferredKeyword",  back_populates="user", cascade="all, delete-orphan")
 
-
-class Category(Base):
-    """
-    Master list of categories (e.g. 'LLMs', 'Robotics').
-    Populated by admin/seed data — NOT per user.
-    """
-    __tablename__ = "categories"
-
-    id   = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, nullable=False)
-    slug = Column(String(100), unique=True, nullable=False)
-
-    followers = relationship("UserPreferredCategory", back_populates="category")
-
-
 class UserPreferredCategory(Base):
     """
-    Junction table — User <-> Category (many-to-many).
-    One row = one user follows one category.
-    A user can follow many categories, each as a separate row.
+    Using user_id and Category name as composite key.
     """
     __tablename__ = "user_preferred_categories"
 
-    id          = Column(Integer, primary_key=True, index=True)
-    user_id     = Column(Integer, ForeignKey("users.id",      ondelete="CASCADE"), nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
-    created_at  = Column(DateTime, server_default=func.now())
-
-    # prevents duplicate (user, category) pairs at DB level
-    __table_args__ = (UniqueConstraint("user_id", "category_id", name="uq_user_category"),)
-
-    user     = relationship("User",     back_populates="preferred_categories")
-    category = relationship("Category", back_populates="followers")
-
-
-class Tag(Base):
-    """
-    Normalized keyword/tag pool (e.g. 'GPT-5', 'OpenAI', 'diffusion models').
-    Shared across users and articles — not duplicated per user.
-    """
-    __tablename__ = "tags"
-
-    id   = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, nullable=False)
-
-    preferred_by = relationship("UserPreferredKeyword", back_populates="tag")
-
+    user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    category_name = Column(String(100), primary_key=True)
+    created_at   = Column(DateTime, server_default=func.now())
+    
+    #relationship
+    user = relationship("User", back_populates="preferred_categories")
 
 class UserPreferredKeyword(Base):
     """
-    Junction table — User <-> Tag (many-to-many).
-    One row = one user is interested in one tag/keyword.
+    Use user_id and keyword_name as composite key.
     """
     __tablename__ = "user_preferred_keywords"
 
-    id         = Column(Integer, primary_key=True, index=True)
-    user_id    = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    tag_id     = Column(Integer, ForeignKey("tags.id",  ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-    # prevents duplicate (user, tag) pairs at DB level
-    __table_args__ = (UniqueConstraint("user_id", "tag_id", name="uq_user_tag"),)
-
+    user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    keyword_name  = Column(String(100), primary_key=True)
+    created_at   = Column(DateTime, server_default=func.now())
+    
     user = relationship("User", back_populates="preferred_keywords")
-    tag  = relationship("Tag",  back_populates="preferred_by")
-    
-    
-    
