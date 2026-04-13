@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import vector 
@@ -17,9 +17,9 @@ class NewsArticle(Base):
     published_at = Column(DateTime)
     created_at   = Column(DateTime, server_default=func.now())
 
-    categories = relationship("ArticleCategory", back_populates="article", cascade="all, delete-orphan")
-    embeddings = relationship("ArticleEmbedding", back_populates="article", cascade="all, delete-orphan")
-
+    categories   = relationship("ArticleCategory", back_populates="article", cascade="all, delete-orphan")
+    embeddings   = relationship("ArticleEmbedding", back_populates="article", cascade="all, delete-orphan")
+    interactions = relationship("UserInteraction", back_populates="article")
 
 class ArticleCategory(Base):
     __tablename__ = "article_categories"
