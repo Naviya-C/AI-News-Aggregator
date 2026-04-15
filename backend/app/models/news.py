@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from pgvector.sqlalchemy import vector 
+from pgvector.sqlalchemy import Vector
 from app.db.base import Base
 
 
@@ -45,7 +45,7 @@ class ArticleEmbedding(Base):
     news_id     = Column(Integer, ForeignKey("news_articles.id", ondelete="CASCADE"), primary_key=True)
     chunk_index = Column(Integer, primary_key=True)
     chunk       = Column(Text, nullable=False)
-    embedding   = Column(vector(3072), nullable=False) # Using ' of OpenAI api' 
+    embedding   = Column(Vector(3072), nullable=False) # Using ' of OpenAI api' 
     created_at  = Column(DateTime, server_default=func.now())
 
     article = relationship("NewsArticle", back_populates="embeddings")
