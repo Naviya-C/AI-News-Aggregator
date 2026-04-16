@@ -1,14 +1,8 @@
 from fastapi import FastAPI
-from app.db.base import Base
-from app.db.session import engine
-
-import app.models
+from app.db.base import Base # Need to load Base in main cause connect two models(user + news), don't remove. If remove it give table relationship error.
 from app.api.routes import user
 
 app = FastAPI()
-
-# TEMP (replace with Alembic in Day 2)
-Base.metadata.create_all(bind=engine)
 
 app.include_router(user.router)
 

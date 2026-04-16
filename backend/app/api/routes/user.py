@@ -10,7 +10,7 @@ from app.db.session import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.config import SECRET_KEY, ALGORITHM
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/profile")
     
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -22,7 +22,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         or_(User.email == user.email, User.username == user.username)
     ).first()
     if existing_user:
-        raise HTTPException(status_code = 400, detail = "User already exists") #400 bad request, server  cannot process.
+        raise HTTPException(status_code = 401, detail = "User already exists") #400 bad request, server  cannot process.
 
     new_user = User(
         first_name      = user.first_name,
@@ -52,7 +52,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-
+ 
 @router.post("/login")
 def login_user(user: UserLogin, db: Session = Depends(get_db)):
 
@@ -77,5 +77,6 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
     }
 
 @router.get("/profile")
-def get_user_profile(current_user = Depends(get_current_user)):
-    return {"user": current_user}
+def get_user_profile(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_details = db.query(User).filter(User.email == current_user).first()
+    return user_details
