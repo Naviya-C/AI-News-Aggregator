@@ -9,7 +9,7 @@ from app.core.config import NEWS_API_KEY, NEWS_API_URL
 now = datetime.now(timezone.utc)
 last_24_hours = (now - timedelta(days=1)).strftime("%Y-%m-%d")
 
-def fetch_news():
+def fetch_news_details():
     params = {
         "apiKey": NEWS_API_KEY,
         "domains": "techcrunch.com,thenextweb.com",
@@ -20,13 +20,15 @@ def fetch_news():
         "page": 1
     }
     
-    response = requests.get(NEWS_API_URL, params = params)
-    
-    if response.status_code != 200:
+    try:
+        response = requests.get(NEWS_API_URL, params = params)
+        response.raise_for_status()
+    except:
         return []
     
     data = response.json()
     return data.get("articles", [])
+    
     
 def store_article(db: Session, articles: list[dict]):
     
