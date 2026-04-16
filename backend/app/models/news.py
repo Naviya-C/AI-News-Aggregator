@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
 from app.db.base import Base
 
-
+ 
 class NewsArticle(Base):
     __tablename__ = "news_articles"
 

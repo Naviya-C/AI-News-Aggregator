@@ -1,8 +1,8 @@
 import requests
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
-from app.models.news import NewsArticle
 
+from app.models.news import NewsArticle
 from app.core.config import NEWS_API_KEY, NEWS_API_URL
 
 
@@ -16,34 +16,37 @@ def fetch_news():
         "from": last_24_hours,
         "sortBy": "publishedAt",
         "language": "en",
-        "pageSize": 20,
+        "pageSize": 100,
         "page": 1
     }
     
     response = requests.get(NEWS_API_URL, params = params)
     
-    if response != 200:
+    if response.status_code != 200:
         return []
     
     data = response.json()
+    return data.get("articles", [])
     
-def store_article(db: Session, artcles: list[dict]):
+def store_article(db: Session, articles: list[dict]):
     
-    for article in artcles:
+    for article in articles:
         exists = db.query(NewsArticle).filter(
-            NewsArticle.url == article['url']
+            NewsArticle.url == article.get("url")
         ).first()
         
         if exists:
             continue
         
         new_article = NewsArticle(
-            title = article['title'],
-            content = article['content'],
-            summary = article['description'],
-            url = article['url'],
-            source_name = article.source['name'],
-            published_at = article['publishedAt']
+            title = article.get("title"),
+            content = article.get("content"),
+            summary = article.get("description"),
+            url = article.get("url"),
+            source_name = article.get("source", {}).get("name"),
+            published_at = datetime.fromisoformat(
+                article["publishedAt"].replace("Z", "+00:00")
+            ) if article.get("publishedAt") else None
         )
         
         db.add(new_article)
