@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from app.models.news import NewsArticle
 from app.core.config import NEWS_API_KEY, NEWS_API_URL
 
-from transformers import pipeline
 
 now = datetime.now(timezone.utc)
 last_24_hours = (now - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -57,19 +56,5 @@ def store_article(db: Session, articles: list[dict]):
     db.commit()
         
 
-def categorize_news():
-    """
-    In here, this function used to categorize scraped news using 'zero-shot-model' to 7 categories.
-        - business, entertainment, general, health, science, sports, technology.
-        - Using zero-shot classification named -> 'facebook/bart-large-mnli'
-        - Only get first highest 2 labels only by filtering threshold. And store to 'article_categories' table
-        SweetElya
-    """
-    
-    pipe = pipeline(model = "facebook/bart-large-mnli")
-    labels = ["business", "entertainment", "general", "health", "science", "sports", "technology"]
-    
-    
-
-def embedding_news():
+def categorize_news(db: Session, ):
     pass
