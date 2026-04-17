@@ -57,18 +57,19 @@ def store_article(db: Session, articles: list[dict]):
     db.commit()
         
 
-def categorize_news():
+def classify_news(text: str):
     """
     In here, this function used to categorize scraped news using 'zero-shot-model' to 7 categories.
         - business, entertainment, general, health, science, sports, technology.
         - Using zero-shot classification named -> 'facebook/bart-large-mnli'
         - Only get first highest 2 labels only by filtering threshold. And store to 'article_categories' table
-        SweetElya
     """
     
-    pipe = pipeline(model = "facebook/bart-large-mnli")
+    pipe = pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
     labels = ["business", "entertainment", "general", "health", "science", "sports", "technology"]
     
+    result = pipe(text, labels) # result is a dictionary contains {labels:[], score:[]}
+    return result["labels"][0]
     
 
 def embedding_news():
