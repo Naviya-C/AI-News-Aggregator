@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.services.news_service import fetch_news_details, store_article, classify_news
+from app.services.news_service import fetch_news_details, store_article, classify_news, embedding_news
 from app.models.news import NewsArticle, ArticleCategory
 
 router = APIRouter(prefix = "/news", tags = ['News'])
@@ -13,6 +13,7 @@ def fetch_news(db: Session = Depends(get_db)):
     store_article(db, articles)
     
     return {"message": f"store {len(articles)} articles"} 
+
 
 @router.post("/categotize")
 def categorize_news(db: Session = Depends(get_db)):
@@ -38,3 +39,13 @@ def categorize_news(db: Session = Depends(get_db)):
         db.add(article_category)
     
     db.commit()
+    
+    
+@router.post("/embedding")
+def news_content_embedding(db: Session = Depends(get_db)):
+    processed = embedding_news(db)
+    
+    return {
+        "status": "success",
+        "processed_articles": processed
+    } 

@@ -3,9 +3,13 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 
 from app.models.news import NewsArticle
-from app.core.config import NEWS_API_KEY, NEWS_API_URL
+from app.core.config import NEWS_API_KEY, NEWS_API_URL, OPEN_AI_KEY
+from app.db.vecotr_db import client
+from app.utils.chunk import smart_chunk
 
 from transformers import pipeline
+
+from openai import OpenAI
 
 now = datetime.now(timezone.utc)
 last_24_hours = (now - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -72,5 +76,39 @@ def classify_news(text: str):
     return result["labels"][0]
     
 
-def embedding_news():
-    pass
+def embedding_news(db: Session):
+    client_openai = OpenAI(api_key = OPEN_AI_KEY)
+    
+    news_content = db.query(NewsArticle.id, NewsArticle.content).all()
+    
+    for news_id, content in news_content:
+        
+        if not content:
+            continue
+        
+        list_chunk = smart_chunk(content)
+        
+        response = client_openai.embeddings.create(
+            input = list_chunk,
+            model = "text-embedding-3-small"
+        )
+    
+        vectors = [item.embedding for item in response.data]
+        points = []
+    
+        for i, vector in enumerate(vectors):
+            id_num = news_id * 1000 + i # In Qdrant id should be either integer or uuid
+            points.append({
+                "id": id_num,
+                "vector": vector,
+                "payload": {
+                    "article_id": news_id,
+                    "chunk_index": i,
+                    "text": None
+                }
+            })
+            
+        client.upsert(
+            collection_name = "news_embedding",
+            points = points
+        )
