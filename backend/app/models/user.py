@@ -29,7 +29,7 @@ class UserPreferredCategory(Base):
     user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     category_name = Column(String(100), primary_key=True)
     
-    created_at    = Column(DateTime, server_default=func.now())
+    created_at    = Column(DateTime, server_default=func.now()) 
     
     #relationship
     user = relationship("User", back_populates="preferred_categories")

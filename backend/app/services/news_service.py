@@ -2,7 +2,7 @@ import requests
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 
-from app.models.news import NewsArticle
+from app.models.news import NewsArticle, ArticleCategory
 from app.core.config import NEWS_API_KEY, NEWS_API_URL, OPEN_AI_KEY
 from app.db.vecotr_db import client
 from app.utils.chunk import smart_chunk
@@ -88,6 +88,9 @@ def embedding_news(db: Session):
         
         list_chunk = smart_chunk(content)
         
+        category = db.query(ArticleCategory).filter(ArticleCategory.news_id == news_id).first() # Fist returns the <ArticleCategory object> OR None
+        cat_name = category.category_name if category else None
+        
         response = client_openai.embeddings.create(
             input = list_chunk,
             model = "text-embedding-3-small"
@@ -104,7 +107,7 @@ def embedding_news(db: Session):
                 "payload": {
                     "article_id": news_id,
                     "chunk_index": i,
-                    "text": None
+                    "category": cat_name
                 }
             })
             
