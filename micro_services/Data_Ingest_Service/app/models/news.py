@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
-from app.db.base import Base
+from shared.base import Base
 
  
 class NewsArticle(Base):
@@ -19,7 +19,7 @@ class NewsArticle(Base):
 
     categories   = relationship("ArticleCategory", back_populates="article", cascade="all, delete-orphan")
     embeddings   = relationship("ArticleEmbedding", back_populates="article", cascade="all, delete-orphan")
-    interactions = relationship("UserInteraction", back_populates="article")
+
 
 class ArticleCategory(Base):
     __tablename__ = "article_categories"
@@ -28,5 +28,4 @@ class ArticleCategory(Base):
     category_name = Column(String(100), primary_key=True)
 
     article = relationship("NewsArticle", back_populates="categories")
-    
     

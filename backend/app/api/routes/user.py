@@ -13,7 +13,7 @@ from app.core.config import SECRET_KEY, ALGORITHM
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/profile")
     
 router = APIRouter(prefix="/users", tags=["Users"])
-
+ 
 
 @router.post("/signup", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
