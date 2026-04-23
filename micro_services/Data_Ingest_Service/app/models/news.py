@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
-from shared.base import Base
+from app.db.base import Base
 
  
 class NewsArticle(Base):
