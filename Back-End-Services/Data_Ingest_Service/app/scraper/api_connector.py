@@ -11,10 +11,10 @@ class APIConnector(BaseScraper):
         self.api_key = api_key
         self.api_url = api_url
 
-    def fetch(self, page = 1, page_size = 50):
+    def fetch(self, page = 1, page_size = 20):
         
         now = datetime.now(timezone.utc)
-        last_24_hours = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+        last_24_hours = (now - timedelta(days = 1)).strftime("%Y-%m-%d")
         
         params = {
             "apiKey": self.api_key,
@@ -41,7 +41,7 @@ class APIConnector(BaseScraper):
             url = article.get("url")
             
             if not url:
-                continue
+                continue 
 
             results.append({
                 "title": article.get("title"),

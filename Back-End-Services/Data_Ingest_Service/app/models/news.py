@@ -1,9 +1,8 @@
 from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from pgvector.sqlalchemy import Vector
 from app.db.base import Base
-
+ 
  
 class NewsArticle(Base):
     __tablename__ = "news_articles"
