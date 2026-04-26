@@ -41,7 +41,7 @@ class APIConnector(BaseScraper):
             url = article.get("url")
             
             if not url:
-                continue 
+                continue  
 
             results.append({
                 "title": article.get("title"),

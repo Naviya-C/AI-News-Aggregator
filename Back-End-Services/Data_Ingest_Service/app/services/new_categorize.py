@@ -3,7 +3,7 @@ from transformers import pipeline
 class Classifier():
     def __init__(self, labels:list):
         self.labels = labels
-        ["business", "entertainment", "general", "health", "science", "sports", "technology"]
+        
     def classify_news(self, text: str):
         """
         In here, this function used to categorize scraped news using 'zero-shot-model' to 7 categories.

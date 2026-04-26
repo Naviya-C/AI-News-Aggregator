@@ -20,7 +20,7 @@ HOST_P = os.getenv("host_P")
 PORT_P = os.getenv("port_P")
 DBNAME_P = os.getenv("dbname_P")
 
-DATABASE_URL = f"postgresql+psycopg2://{USER_P}:{PASSWORD_P}@{HOST_P}:{PORT_P}/{DBNAME_P}?sslmode=require"
+DATABASE_URL_P = f"postgresql+psycopg2://{USER_P}:{PASSWORD_P}@{HOST_P}:{PORT_P}/{DBNAME_P}?sslmode=require"
 
 
 SECRET_KEY = os.getenv('SECRET_KEY')
