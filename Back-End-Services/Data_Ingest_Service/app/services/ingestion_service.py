@@ -1,6 +1,7 @@
 from app.scraper.api_connector import APIConnector
 from app.services.new_categorize import Classifier
 from app.models.news import NewsArticle, ArticleCategory
+from app.services.news_embedding import embedding_news
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -60,39 +61,38 @@ class IngestionService:
             
 
     def categorize_news(self):
-        with self.db.begin():
-            final_cat = select(ArticleCategory.news_id).order_by(ArticleCategory.news_id.desc()).limit(1)
-            final_cat_news_id = self.db.scalars(final_cat).scalar_one_or_none() # If data table is no any entry it will returns 'None'. Not Zero
-            
-            news_last = select(NewsArticle.id).order_by(NewsArticle.id.desc()).limit(1)
-            news_last_id = self.db.scalar(news_last).scalar_one_or_none()
-            
-        if final_cat_news_id == news_last_id:
-            return "All are updated."
-            
-        if final_cat_news_id is None:
-            final_cat_news_id = 0
-        
         classifier = Classifier(CLASSESS)
         
-        catg = []
+        with self.db.begin():
+            # scalar normally return the oject but it depends on what you put inside to the select(), in here I put directly a one column therefore it returns only values rather returning any object.
+            last_recorded_news_id_in_ArticleCat = self.db.scalar(select(ArticleCategory.news_id).order_by(ArticleCategory.news_id.desc()).limit(1)) or 0         
+            news_last_id_in_NewsArticle = self.db.scalar(select(NewsArticle.id).order_by(NewsArticle.id.desc()).limit(1))
+            
+        if last_recorded_news_id_in_ArticleCat == news_last_id_in_NewsArticle:
+            return "All are updated."
+        if last_recorded_news_id_in_ArticleCat > news_last_id_in_NewsArticle:
+            return "Tables has conflict"
+            
+        new_categories = []
         
-        for id in range(final_cat_news_id+1, news_last_id+1):
-            stmt = select(NewsArticle.id, NewsArticle.summary.where(NewsArticle.id  == id))
-            newId = stmt[0][0]
-            label = classifier.classify_news(stmt[0][1])
+        for id in range(last_recorded_news_id_in_ArticleCat+1, news_last_id_in_NewsArticle+1):
+            stmt = self.db.execute(select(NewsArticle.id, NewsArticle.summary).where(NewsArticle.id  == id)).first()
+            if stmt:
+                newsId = stmt[0]
+                label = classifier.classify_news(stmt[1])
+            else:
+                continue
             
             article_cat = ArticleCategory(
-                news_id = newId,
+                news_id = newsId,
                 category_name = label
             )
+                    
+            new_categories.append(article_cat)
             
-            catg.append(article_cat)
-            
-        try:
-            self.db.add_all(catg)
-            self.db.commit()
-        except Exception:
-            raise HTTPException(status_code = 500, detail = "Database Error")
-            
-            
+        with self.db.begin():
+            self.db.add_all(new_categories)
+        
+        return "Categorization complete"
+    
+    

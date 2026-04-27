@@ -1,4 +1,3 @@
-from fastapi import Depends
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
@@ -7,6 +6,7 @@ from app.db.vecotr_db import client
 from app.data_processors.chunker import smart_chunk
 from app.core.config import OPEN_AI_KEY
 
+
 def embedding_news(db: Session):
     client_openai = OpenAI(api_key = OPEN_AI_KEY)
     
@@ -14,7 +14,7 @@ def embedding_news(db: Session):
     
     for news_id, content in news_content:
         
-        if not content:
+        if not content: 
             continue
         
         list_chunk = smart_chunk(content)

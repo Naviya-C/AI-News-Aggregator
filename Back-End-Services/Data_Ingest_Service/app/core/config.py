@@ -25,4 +25,8 @@ DATABASE_URL_P = f"postgresql+psycopg2://{USER_P}:{PASSWORD_P}@{HOST_P}:{PORT_P}
 NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 NEWS_API_URL = os.getenv('NEWS_API_URL')
 
+# Qdrant database access details
+QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+
 OPEN_AI_KEY = os.getenv("OPEN_AI_KEY")
