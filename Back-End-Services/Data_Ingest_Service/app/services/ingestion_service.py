@@ -65,6 +65,8 @@ class IngestionService:
     def categorize_news(self):
         classifier = Classifier(CLASSESS)
         
+        self.db.rollback()
+        
         with self.db.begin():
             # scalar normally return the oject but it depends on what you put inside to the select(), in here I put directly a one column therefore it returns only values rather returning any object.
             last_recorded_news_id_in_ArticleCat = self.db.scalar(select(ArticleCategory.news_id).order_by(ArticleCategory.news_id.desc()).limit(1)) or 0         
@@ -92,6 +94,8 @@ class IngestionService:
                     
             new_categories.append(article_cat)
             
+        self.db.rollback() # Should need to close transaction before start 'with.db.begin()'. Start transaction in 'stmt'.
+        
         with self.db.begin():
             self.db.add_all(new_categories)
         

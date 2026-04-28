@@ -5,7 +5,7 @@ from app.data_processors.chunker import smart_chunk
 from app.core.config import OPEN_AI_KEY
 
 class Embedding:
-    def embedding_news(content, id, cat_name):
+    def embedding_news(self, content, id, cat_name):
         """
         In here this is using for embeddings,
             - content, what embedding
