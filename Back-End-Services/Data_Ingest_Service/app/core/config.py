@@ -12,7 +12,6 @@ DBNAME = os.getenv("dbname")
 
 DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
 
-
 # This is pooler connection to dadtabase. Use this for normal user interactions.
 USER_P = os.getenv("user_P")
 PASSWORD_P = os.getenv("password_P")

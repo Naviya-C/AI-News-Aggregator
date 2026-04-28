@@ -17,7 +17,6 @@ class NewsArticle(Base):
     created_at   = Column(DateTime, server_default=func.now())
 
     categories   = relationship("ArticleCategory", back_populates="article", cascade="all, delete-orphan")
-    embeddings   = relationship("ArticleEmbedding", back_populates="article", cascade="all, delete-orphan")
 
 
 class ArticleCategory(Base):

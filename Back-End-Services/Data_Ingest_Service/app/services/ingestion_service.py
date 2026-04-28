@@ -1,10 +1,12 @@
 from app.scraper.api_connector import APIConnector
 from app.services.new_categorize import Classifier
 from app.models.news import NewsArticle, ArticleCategory
-from app.services.news_embedding import embedding_news
+from app.services.news_embedding import Embedding
+from app.db.vecotr_db import client
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from qdrant_client import models
 
 CLASSESS = ["business", "entertainment", "general", "health", "science", "sports", "technology"]
 
@@ -96,3 +98,56 @@ class IngestionService:
         return "Categorization complete"
     
     
+    def news_embedding(self):
+        result, _ = client.scroll(
+            collection_name = "news_embedding",
+            limit = 1,
+            with_payload = True,
+            order_by = models.OrderBy(
+                key = "article_id",
+                direction = models.Direction.DESC
+            )
+        )
+        
+        last_news_id_in_vecDB = result[0].payload['article_id'] if result else 0
+            
+            
+        with self.db.begin():
+            stmt = (
+                select(NewsArticle.id, NewsArticle.content, ArticleCategory.category_name)
+                .join(ArticleCategory, ArticleCategory.news_id == NewsArticle.id)
+                .where(NewsArticle.id > last_news_id_in_vecDB)
+                .order_by(NewsArticle.id.asc())
+                .execution_options(yield_per=100) # Fetches 100 rows at a time
+            )
+            
+            # Iterating directly over the result is memory efficient
+            result_stream = self.db.execute(stmt)
+            
+            embedding = Embedding()
+            count = 0
+            
+            for art_id, content, cat_name in result_stream:
+                if content:
+                    embedding.embedding_news(id = art_id, content = content, cat_name = cat_name)
+                    count += 1
+                    
+        return f"Successfully embedded {count} articles"
+    
+    
+    def run_full_pipeline(self):
+        """Executes the entire ETL flow in order."""
+        print("Starting Step 1: Ingestion...")
+        self.run_ingestion()
+        print("Completed step 1")
+        
+        print("Starting Step 2: Categorization...")
+        cat_status = self.categorize_news()
+        print(f"Categorization status: {cat_status}")
+        
+        print("Starting Step 3: Embedding...")
+        embed_status = self.news_embedding()
+        print(f"Embedding status: {embed_status}")
+        
+        return {"status": "Complete", "details": embed_status}
+

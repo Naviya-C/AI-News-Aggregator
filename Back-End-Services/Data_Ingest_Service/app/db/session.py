@@ -1,8 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.core.config import DATABASE_URL
+from app.core.config import DATABASE_URL_P
 
-engine = create_engine(DATABASE_URL)
+import contextlib
+
+engine = create_engine(DATABASE_URL_P)
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -10,6 +12,7 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
+@contextlib.contextmanager
 def get_db():
     db = SessionLocal()
     try:
