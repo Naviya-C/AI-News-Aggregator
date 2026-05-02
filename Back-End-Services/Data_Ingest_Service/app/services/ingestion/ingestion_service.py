@@ -1,7 +1,7 @@
 from app.scraper.api_connector import APIConnector
-from app.services.new_categorize import Classifier
+from app.services.ingestion.new_categorize import Classifier
 from app.models.news import NewsArticle, ArticleCategory
-from app.services.news_embedding import Embedding
+from app.services.ingestion.news_embedding import Embedding
 from app.db.vecotr_db import client
 
 from fastapi import HTTPException

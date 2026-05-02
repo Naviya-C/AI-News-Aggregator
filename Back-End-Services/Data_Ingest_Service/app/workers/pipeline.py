@@ -1,4 +1,4 @@
-from app.services.ingestion_service import IngestionService
+from app.services.ingestion.ingestion_service import IngestionService
 from app.core.config import NEWS_API_URL, NEWS_API_KEY
 from app.db.session import get_db
 

@@ -27,3 +27,10 @@ class ArticleCategory(Base):
 
     article = relationship("NewsArticle", back_populates="categories")
     
+class Recommendation(Base):
+    __tablename__ = "user_news_recommendations"
+    
+    user_id = Column(Integer, primary_key=True, index=True)
+    news_id = Column(Integer, ForeignKey("news_articles.id", ondelete="CASCADE"), primary_key=True)
+    
+    
