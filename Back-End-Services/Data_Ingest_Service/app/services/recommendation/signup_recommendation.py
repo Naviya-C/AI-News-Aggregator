@@ -2,9 +2,12 @@ import asyncio
 import json
 from aiokafka import AIOKafkaConsumer
 from collections import defaultdict
+from sqlalchemy.dialects.postgresql import insert
+
+from app.models.news import Recommendation
 
 
-# -------------------------------ingestion
+# -------------------------------
 # Utility Functions
 # -------------------------------
 
@@ -50,7 +53,7 @@ def vector_search(qdrant, query_vector, user_category):
     response = qdrant.query_points(
         collection_name="news_embedding",
         query=query_vector,
-        limit=5,
+        limit=10,
         query_filter=query_filter
     )
 
@@ -81,17 +84,21 @@ def extract_article_ids(results):
 
 
 async def store_article_id_with_user_id(db, article_ids, user_id):
-    """
-    Example async DB write (adjust to your ORM)
-    """
     if not article_ids:
         return
 
-    # Example pseudo (adapt to your DB)
-    await db.execute(
-        "INSERT INTO user_recommendations (user_id, article_id) VALUES ($1, $2)",
-        [(user_id, aid) for aid in article_ids]
+    stmt = insert(Recommendation).values([
+        {"user_id": user_id, "news_id": aid}
+        for aid in article_ids
+    ])
+
+    # Prevent duplicate key crash
+    stmt = stmt.on_conflict_do_nothing(
+        index_elements=["user_id", "news_id"]
     )
+
+    await db.execute(stmt)
+    await db.commit()
 
 
 # -------------------------------
@@ -109,7 +116,7 @@ async def consume_and_process(open_api_client, qdrant, db):
     await consumer.start()
 
     try:
-        print("🚀 Listening for signup events...")
+        print("🚀 Listening for signup events...") # replace with log later
 
         async for msg in consumer:
             try:
@@ -125,13 +132,13 @@ async def consume_and_process(open_api_client, qdrant, db):
                 # Step 0: Validation
                 # -------------------------
                 if not payload["user_id"]:
-                    print("❌ Missing user_id, skipping...")
+                    print("Missing user_id, skipping...")
                     continue
 
                 keyword_query = build_keyword_query(payload)
 
                 if not keyword_query:
-                    print(f"⚠️ User {payload['user_id']} has no keywords, skipping...")
+                    print(f"User {payload['user_id']} has no keywords, skipping...")
                     continue
 
                 # -------------------------
@@ -166,11 +173,11 @@ async def consume_and_process(open_api_client, qdrant, db):
                     payload["user_id"]
                 )
 
-                print(f"✅ Processed user {payload['user_id']}")
+                print(f"Processed user {payload['user_id']}")
 
             except Exception as e:
-                # 🔥 Important: don't crash consumer
-                print(f"❌ Error processing message: {e}")
+                # Important: don't crash consumer
+                print(f"Error processing message: {e}")
 
     finally:
         await consumer.stop()
