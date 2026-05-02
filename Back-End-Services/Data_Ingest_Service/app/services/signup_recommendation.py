@@ -1,14 +1,47 @@
+import asyncio
+import json
+from aiokafka import AIOKafkaConsumer
 from collections import defaultdict
 
-def build_keyword_query(db, user_id):
+
+# --- SERVICE 1: The Consumer ---
+async def consume_and_process():
+    """
+    This is used for signup event. The initial part of the user recommendations
+    """
+    consumer = AIOKafkaConsumer(
+        'user_signup_events',
+        bootstrap_servers='localhost:9092', # Localhost for local machine
+        group_id="rec-service-group"
+    )
+    
+    await consumer.start()
+
+    try:
+        print("Listening for signup events...")
+        async for msg in consumer:
+            data = json.loads(msg.value.decode('utf-8'))
+            payload = {
+                "user_id": data['user_id'],
+                "categories": data.get('categories', []),
+                "keywords": data.get('keywords', [])
+            }
+                
+    finally:
+        await consumer.stop()
+        
+    return payload
+
+asyncio.run(consume_and_process())
+
+
+def build_keyword_query(payload):
     """
     In here, User must need to add atleast one keyword otherwise they can't process next step.
     Assume above, this function built.
     """
-    
-    rows = db.query(UserPreferredKeyword.keyword_name).filter(UserPreferredKeyword.user_id == user_id).all()
-    
-    keywords_list = [r[0] for r in rows]
+        
+    keywords_list = payload['keywords']
     
     keywords_query = f"Topics of interest: {', '.join(keywords_list)}"
     
@@ -21,12 +54,6 @@ def embedd_keyword_query(open_api_client, keyword_query:str):
     )
     
     return response.data[0].embedding
-
-def get_user_category(db, user_id):
-    row = db.query(UserPreferredCategory.category_name).filter(UserPreferredCategory.user_id == user_id).all()
-    category = [cat[0] for cat in row]
-    
-    return category
 
 def vector_search(qdrant, query_vector, user_category):
 
@@ -59,7 +86,6 @@ def vector_search(qdrant, query_vector, user_category):
 
     return normalized
 
-
 def extract_article_ids(results):
     scores = defaultdict(float)
 
@@ -77,21 +103,5 @@ def extract_article_ids(results):
 
     return [aid for aid, _ in ranked]
 
-
-def fetch_articles_ordered(db, news_ids):
-    if not news_ids:
-        return []
-
-    rows = db.query(NewsArticle).filter(NewsArticle.id.in_(news_ids)).all()
-
-    row_map = {row.id: row for row in rows}
-
-    ordered = [row_map[nid] for nid in news_ids if nid in row_map]
-
-    # sort by published date (fallback to created_at)
-    ordered.sort(
-        key = lambda x: x.published_at or x.created_at,
-        reverse=True
-    )
-
-    return ordered
+def store_article_id_with_user_id(db, article_ids: list, user_id):
+    pass

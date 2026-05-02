@@ -1,37 +1,60 @@
 from app.schemas.user_schema import UserCreate, UserLogin
 from app.models.user import User
+from app.db.session import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from fastapi import HTTPException
+from fastapi import HTTPException, APIRouter, Depends
+from sqlalchemy.orm import Session
+from aiokafka import AIOKafkaProducer
+import json
 
+router = APIRouter(prefix = "auth", tags = ['auth'])
 
-def create_user(user: UserCreate, db: Session):
+async def kafka_producer():
+    producer = AIOKafkaProducer(bootstrap_servers='kafka:9092')
+    await producer.start()
+    return producer
 
-    existing_user = db.query(User).filter(
-        or_(User.email == user.email, User.username == user.username)
-    ).first()
-    if existing_user:
-        raise HTTPException(status_code = 400, detail = "User already exists") #400 bad request, server  cannot process.
-
-    new_user = User(
-        first_name      = user.first_name,
-        last_name       = user.last_name,
-        username        = user.username,
-        email           = user.email,
-        hashed_password = hash_password(user.password)
-    )
-
+@router.post("/signup")
+async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
+    """
+    In here every sign up should need to create producer therefore it's better to have one producer. It reduce cost for create producer each time.
+    Use singleton pattern to create producer in future. Then cost getting low.
+    """
     try:
-        db.add(new_user)
+        user = User(
+            first_name = user_data['first_name'],
+            last_name = user_data['last_name'],
+            username = user_data['username'],
+            email = user_data['email'],
+            hashed_password = hash_password(user_data['password'])
+        )
+        
+        db.add(user)
         db.commit()
-        db.refresh(new_user)
-    except Exception:
+        db.refresh(user)
+        
+        producer = await kafka_producer()
+        
+        try:
+            event_payload = {
+                "user_id": user.id,
+                "categories": user_data.get('categories', []),
+                "keywords": user_data.get('keywords', [])
+            }
+            await producer.send_and_wait("user_signup_events", json.dump(event_payload).encode('utf-8'))
+        finally:
+            await producer.stop()
+            
+        return {"satatus":"Event Success", "user_id": user.id}
+        
+    except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database error")
-
-    return new_user
+        raise HTTPException(status_code = 400, detail = "str(e)")
+        
+    
 
 
 def login_user(user: UserLogin, db: Session):
