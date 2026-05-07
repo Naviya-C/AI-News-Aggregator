@@ -56,7 +56,7 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
         
     
 
-
+@router.post("/login")
 def login_user(user: UserLogin, db: Session):
 
     existing_user = db.query(User).filter(
@@ -72,7 +72,11 @@ def login_user(user: UserLogin, db: Session):
     if not verify_password(user.password, existing_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = create_access_token({"sub": str(existing_user.id)})
+    token = create_access_token(
+        {
+            "sub": str(existing_user.id),
+            }
+        )
 
     return {
         "access_token": token,

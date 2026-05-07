@@ -34,3 +34,5 @@ class Recommendation(Base):
     news_id = Column(Integer, ForeignKey("news_articles.id", ondelete="CASCADE"), primary_key=True)
     
     
+    
+    
